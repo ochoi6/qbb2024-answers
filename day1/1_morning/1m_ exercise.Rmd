@@ -1,0 +1,149 @@
+---
+title: "explore_samples"
+output: html_document
+date: "2024-09-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#Question 1. Browse data dictionaries 
+a) Navigate using a web browser to https://gtexportal.org/home/downloads/adult-gtex/overview
+b) Select data type: Metadata
+c) Download and take a quick look at GTEx_Analysis_v8_Annotations_SampleAttributesDD.xlsx
+
+#Question 2. Prepare your working environment
+a) Reset R by opening the Session menu and selecting “Terminate R…”
+b) Create either a new R Script (e.g. explore-samples.R) or a new R Notebook (e.g. explore-samples.Rmd) using the provided template
+c) Load the tidyverse package
+
+#Question 3. Wrangle the sample metadaa 
+a) Load the GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt file and assign to variable 'df'
+b) Create a SUBJECT column using the following code
+df <- df %>%
+    #mutate( SUBJECT=str_extract( SAMPID, "[^-]+-[^-]+" ), .before=1 )
+Confirm that the first column in df is SUBJECT
+
+```{r}
+
+#Make subject column
+library(tidyverse)
+
+#Upload data and save it into 'df'
+df <- read_tsv("~/Data/GTEx/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt")
+
+df <- df %>%
+    mutate( SUBJECT=str_extract( SAMPID, "[^-]+-[^-]+" ), .before=1 )
+
+head(df$SUBJECT)
+
+
+```
+
+
+```{r}
+
+library(tidyverse)
+
+#sort and summarize into counts 
+summarized_subjects <- df %>%
+                        group_by(SUBJECT) %>%
+                        summarize(counts = n()) 
+
+#.by_group = FALSE -> default parameteres (is changeable) for arrange function 
+  
+#Arrange is by default ascending order -> use minus symbol to say reverse 
+
+summarized_subjects %>%
+  arrange(-counts) 
+
+summarized_subjects %>%
+  arrange(counts) 
+
+#most = K-562 (217 counts), GTEX-NPJ8 (72 counts)
+#least = GTEX-1JMI6, GTEX-1PAR6 (1 counts each)
+
+```
+
+
+```{r}
+
+#Which two SMTSDs (tissue types) have the most samples? The least? Why?
+#sort and summarize into counts 
+summarized_subjects_SMTSDs <- df %>%
+                        group_by(SMTSD) %>%
+                        summarize(counts = n()) 
+  
+#Arrange is by default ascending order -> use minus symbol to say reverse 
+
+summarized_subjects_SMTSDs %>%
+  arrange(-counts) 
+
+summarized_subjects_SMTSDs %>%
+  arrange(counts) 
+
+#most = whole blood (3288 counts) 
+#least = kidney medulla (4 counts)
+
+```
+
+
+```{r}
+
+#GTEX-NPJ8 -> filter for this and save into new dataframe called df_npj8
+
+df_npj8 <- filter(df, SUBJECT == "GTEX-NPJ8")
+
+summarize_df_npj8 <- df_npj8 %>%
+                      group_by(SMTSD) %>%
+                      summarize(counts = n()) %>%
+                      arrange(-counts)
+
+#WHOLE BLOOD
+
+df_npj8_wholeblood <- filter(df_npj8, SMTSD == "Whole Blood")
+
+#non-tidyverse way
+df_npj8_wholeblood[,(15:20)]
+
+#tidyverse way 
+df_npj8_wholeblood %>% select(15:20) #select is for only columns 
+
+#replicates of same tissue but done with different sequencing technologies -> 
+
+```
+
+
+```{r}
+
+#explore SMATSSCR (autolysis score)
+
+#filter out NA's
+df_filtered <- df %>%
+  filter(!is.na(SMATSSCR))
+
+print(df_filtered$SMATSSCR)
+
+#find row means of SMATSSCR -> multiple rows with same subject so take that into consideration 
+smarsscr_subject_means <- df_filtered %>%
+                            group_by(SUBJECT) %>%
+                            summarize(mean_SMATSSCR = mean(SMATSSCR))
+
+mean_smatsscr_zero <- filter(smarsscr_subject_means, mean_SMATSSCR == 0)
+
+#giving a nice bell curve -> relatively evenly distributed - histogram 
+
+hist(smarsscr_subject_means$mean_SMATSSCR)
+barplot(smarsscr_subject_means$mean_SMATSSCR, xlab = "Subjects")
+
+#rna degrades so fast and blood is easy and accessible tissue  
+#gtex is using dead bodies 
+
+
+```
+
+
+
+
