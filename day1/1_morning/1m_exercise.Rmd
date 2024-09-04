@@ -71,7 +71,7 @@ df %>%
   summarize(counts = n()) %>% 
   arrange(counts)
 
-###ANSWER: K-562	(217 counts) and GTEX-NPJ8 (72 counts) have the most samples per subject. GTEX-1JMI6	(1 count) and GTEX-1PAR6 (1 count) have the least samples per subject.
+###ANSWER: K-562 (217 counts) and GTEX-NPJ8 (72 counts) have the most samples per subject. GTEX-1JMI6 (1 count) and GTEX-1PAR6 (1 count) have the least samples per subject.
 
 ```
 
