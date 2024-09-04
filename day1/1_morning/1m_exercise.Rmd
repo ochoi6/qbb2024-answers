@@ -1,0 +1,167 @@
+---
+title: "explore_samples"
+output: html_document
+date: "2024-09-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Question 1. Browse data dictionaries 
+a) Navigate using a web browser to https://gtexportal.org/home/downloads/adult-gtex/overview
+b) Select data type: Metadata
+c) Download and take a quick look at GTEx_Analysis_v8_Annotations_SampleAttributesDD.xlsx
+
+
+#Question 2. Prepare your working environment
+a) Reset R by opening the Session menu and selecting “Terminate R…”
+b) Create either a new R Script (e.g. explore-samples.R) or a new R Notebook (e.g. explore-samples.Rmd) using the provided template
+c) Load the tidyverse package
+
+
+```{r}
+
+#Load tidyverse package
+library(tidyverse)
+
+```
+
+
+#Question 3. Wrangle the sample metadaa 
+a) Load the GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt file and assign to variable 'df'
+b) Create a SUBJECT column using the following code
+df <- df %>%
+    #mutate( SUBJECT=str_extract( SAMPID, "[^-]+-[^-]+" ), .before=1 )
+c)Confirm that the first column in df is SUBJECT
+
+```{r}
+
+#Loading GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt into a new df called 'df'
+df <- read_tsv("~/Data/GTEx/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt")
+
+#Creating a SUBJECT column using the provided code 
+df <- df %>%
+    mutate( SUBJECT=str_extract(SAMPID, "[^-]+-[^-]+" ), .before=1)
+
+#Confirming that the SUBJECT column was created 
+head(df)
+
+```
+
+
+
+#Question 4. Which two SUBJECTs have the most samples? The least?
+a) Use group_by(), summarize(), and arrange()
+b) Describe your results as either a comment (# in R Script) or a bullet point (- in R Notebook)
+
+```{r}
+
+##group_by(), summarize(), and arrange() to find the two most and least amount of samples for subjects
+
+#most (since arrange does by ascending order, using '-' sign in front reverses it)
+df %>%
+  group_by(SUBJECT) %>% 
+  summarize(counts = n()) %>% 
+  arrange(-counts)
+
+#least 
+df %>%
+  group_by(SUBJECT) %>% 
+  summarize(counts = n()) %>% 
+  arrange(counts)
+
+###ANSWER: K-562	(217 counts) and GTEX-NPJ8 (72 counts) have the most samples per subject. GTEX-1JMI6	(1 count) and GTEX-1PAR6 (1 count) have the least samples per subject.
+
+```
+
+
+
+#Question 5. Which two SMTSDs (tissue types) have the most samples? The least? Why?
+a) Solve and document as above
+
+```{r}
+
+#Sort and summarize into counts similar to what I did in question 4 
+df %>%
+  group_by(SMTSD) %>%
+  summarize(counts = n()) %>% 
+  arrange(-counts)
+
+df %>%
+  group_by(SMTSD) %>%
+  summarize(counts = n()) %>% 
+  arrange(counts)
+
+###ANSWER: The two SMTSD with most samples is whole blood (3288 counts) and muscle - skeletal (1132 counts). The two SMTSD with least samples is kidney - medulla (4 counts) and cervix - ectocervix (9 counts). There are probably more samples for whole blood and muscle because it is an easier sample to access and gather. 
+
+```
+
+
+#Question 6. For subject GTEX-NPJ8
+a) Filter for samples from this subject and save as a new object (e.g. df_npj8)
+b) Which tissue has the most samples?
+c) For that tissue, what is different between the samples? Scroll to the 15th through 20th columns …
+
+```{r}
+
+#Filter for GTEX-NPJ8 and save into new data frame called df_npj8
+df_npj8 <- filter(df, SUBJECT == "GTEX-NPJ8")
+
+#Seeing which tissue has the most amount of samples for subject GTEX-NPJ8
+summarize_df_npj8 <- df_npj8 %>%
+                      group_by(SMTSD) %>%
+                      summarize(counts = n()) %>%
+                      arrange(-counts)
+
+#Printing summarized and arranged results to see tissue with most samples -> seems like it is whole because (9 counts)
+summarize_df_npj8 
+
+#Filtering out subject GTEX-NPJ8 that are whole blood tissue samples into a new df called 'df_npj8_wholeblood'
+df_npj8_wholeblood <- filter(df_npj8, SMTSD == "Whole Blood")
+
+#Looking at columns 15 to 20 of 'df_npj8_wholeblood'
+df_npj8_wholeblood[,(15:20)]
+
+###ANSWER: For subject GTEX-NPJ8, the tissue with most samples is whole blood (9 counts). For tissue samples within whole blood, we can see that they have been sequenced using different sequencing technologies (column SMGEBTCHT). This demonstrates how different technologies from the same tissue can provide different data and have their pros/cons of what their rigor is. 
+
+```
+
+
+#Question 7. Explore SMATSSCR (autolysis score)
+a) Filter out NA values in this column to avoid mean() returning NA
+  df %>%
+    filter( !is.na(SMATSSCR) )
+b) How many SUBJECTs have a mean SMATSSCR score of 0?
+c) What other observations can you make about the distribution of mean scores?
+d) What are possible ways to present this information in a report?
+
+
+```{r}
+
+#Filtering out NA values 
+df_filtered <- df %>%
+  filter(!is.na(SMATSSCR))
+
+#Finding row means of SMATSSCR -> there are multiple rows with the same subject so I need to take that into consideration 
+SMATSSCR_subject_means <- df_filtered %>%
+                            group_by(SUBJECT) %>%
+                            summarize(mean_SMATSSCR = mean(SMATSSCR))
+
+#Seeing how many SUBJECTS have a SMATSSCR of 0 using 'filter' function 
+mean_SMATSSCR_zero <- filter(SMATSSCR_subject_means, mean_SMATSSCR == 0)
+
+##Plots 
+#Raw data point visualization
+barplot(SMATSSCR_subject_means$mean_SMATSSCR, xlab = "Subjects")
+
+#Bin data visualization of spread
+hist(SMATSSCR_subject_means$mean_SMATSSCR)
+
+###ANSWER: There are 15 subjects with a mean SMATSSCR of zero. The distribution of these mean scores are quite even and follow a bell-curve. Possible ways to distribute the frequence and spread of the SMATSSCR data is through a histogram. 
+
+```
+
+
+
+
