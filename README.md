@@ -1,4 +1,4 @@
 # qbb2024-answers
 
-Bootcamp day 1
+Bootcamp '24!
 
