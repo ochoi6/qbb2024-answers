@@ -2,15 +2,14 @@
 
 #Question 3. (tally-fixed.py) Starting with tally.py, identify and fix the three bugs in this code. The output of this program should match the output of cut -f 1 | uniq -c e.g.
 
-#load sys into the environment 
+#Load sys into the environment 
 import sys 
 
-#Fix the 3 bugs in the code and create a program that produces the same output as the result from grep -v "#" | cut -f 1 | uniq -c
-
+#Setting file as the second thing to consider in the command line to open it when running the loop
 my_file = open( sys.argv[1] )
 
+#For loop 
 chr = ""
-
 count = 0
 
 for my_line in my_file:
