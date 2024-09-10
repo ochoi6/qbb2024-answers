@@ -1,0 +1,234 @@
+---
+title: "4a_exercise"
+output: html_document
+date: "2024-09-06"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+
+library(tidyverse)
+library(broom)
+
+```
+
+
+#QUESTION 1. Wrangle the data 
+
+Step 1.1
+You’ll start by exploring the data in aau1043_dnm.csv. First, load this data into a tibble.
+
+
+```{r}
+
+##aau1043_dnm.csv file 
+
+#Reading in the 'aau1043_dnm.csv' file into my environment as 'dnm'
+dnm <- read_csv(file = "/Users/cmdb/qbb2024/day4/aau1043_dnm.csv")
+
+#Printing the dnm dataframe to cheeck it was loaded in correctly 
+head(dnm)
+
+```
+
+
+Step 1.2
+Use group_by() and summarize() to tabulate the number of paternally and maternally inherited DNMs in each proband. Note that the maternal versus paternal origin of the mutations are recorded in the column titled Phased_combined.
+
+```{r}
+
+##Grouping the $Proband_id and summarizing it for paternal, maternal inherited DNMs
+
+#Grouping and summarize to save result into 'dnm_summary'
+dnm_summary <- dnm %>%
+  group_by(Proband_id) %>%
+  summarize(
+    n_paternal_dnm = sum(Phase_combined == "father", na.rm = TRUE),
+    n_maternal_dnm = sum(Phase_combined == "mother", na.rm = TRUE)
+  )
+
+#Printing the result to see 
+print(dnm_summary)
+
+```
+
+
+Step 1.3
+Now, load the data from aau1043_parental_age.csv into a new dataframe.
+
+```{r}
+
+##aau1043_parental_age.csv 
+
+#Reading in the 'aau1043_parental_age.csv' file into my environment as 'ages'
+ages <- read_csv(file = "/Users/cmdb/qbb2024/day4/aau1043_parental_age.csv")
+
+#Printing the ages dataframe to cheeck it was loaded in correctly 
+head(ages)
+
+```
+
+
+Step 1.4
+You now have two dataframes with complementary information. It would be nice to have all of this in one dataframe. Use the left_join() function to combine your dataframe from step 2 with the dataframe you just created in step 3 based on the shared column Proband_id.
+
+```{r}
+
+#Using 'left_join()' to combining the dataframes together 
+dnm_combined <- left_join(dnm_summary, ages, by = "Proband_id")
+
+```
+
+
+
+#QUESTION 2. Fit and interpret linear regression models 
+
+Step 2.1
+First, you’re interested in exploring if there’s a relationship between the number of DNMs and parental age. Use ggplot2 to plot the following. All plots should be clearly labelled and easily interpretable.
+
+1. the count of maternal de novo mutations vs. maternal age
+2. the count of paternal de novo mutations vs. paternal age
+
+```{r}
+
+#Plot 1. the count of maternal de novo mutations vs. maternal age
+
+ggplot(data = dnm_combined, 
+       mapping = aes(x = Mother_age, 
+                     y = n_maternal_dnm)) +
+  geom_point() + 
+  geom_smooth(method = "lm") +
+  xlab("Mother age (years)") +
+  ylab("Number of maternal de novo mutations") +
+  ggtitle("The count of maternal de novo mutations vs. maternal age") +
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5, 
+                                  size = 15)) 
+
+```
+
+
+```{r}
+
+#Plot 2. the count of maternal de novo mutations vs. maternal age
+
+ggplot(data = dnm_combined, 
+       mapping = aes(x = Father_age, 
+                     y = n_paternal_dnm)) +
+  geom_point() + 
+  geom_smooth(method = "lm") +
+  xlab("Father age (years)") +
+  ylab("Numner of paternal de novo mutations") +
+  ggtitle("The count of paternal de novo mutations vs. paternal age") +
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5, 
+                                  size = 15)) 
+
+```
+
+
+Step 2.2
+Now that you’ve visualized these relationships, you’re curious whether they’re statistically significant. Fit a linear regression model to the data using the lm() function.
+
+What is the “size” of this relationship? In your own words, what does this mean? Does this match what you observed in your plots in step 2.1?
+
+Is this relationship significant? How do you know? In your own words, what does this mean?
+
+```{r}
+
+#Performing lm based on the variables used in the plot above and saving the summarized results in 'mom_lm'
+mom_lm <- lm(data = dnm_combined, 
+             formula = n_maternal_dnm ~ 1 + Mother_age) %>% 
+               summary()
+  
+mom_lm
+
+#Size of this relationship = 2.5 
+#every unit (year) of mother's age, approximately 0.37757 number of de novo mutations occur
+#each unit of mother's age, the number of de novo mutations increases by 0.37757 (linear = slope
+
+
+```
+
+Step 2.3
+As before, fit a linear regression model, but this time to test for an association between paternal age and paternally inherited de novo mutations.
+
+What is the “size” of this relationship? In your own words, what does this mean? Does this match what you observed in your plots in step 2.1?
+
+Is this relationship significant? How do you know? In your own words, what does this mean?
+
+```{r}
+
+dad_lm <- lm(data = dnm_combined, 
+             formula = n_paternal_dnm ~ 1 + Father_age) %>% 
+               summary()
+  
+dad_lm
+
+1.35384
+
+```
+
+Step 2.4
+Using your results from step 2.3, predict the number of paternal DNMs for a proband with a father who was 50.5 years old at the proband’s time of birth. Record your answer and your work (i.e. how you got to that answer).
+
+```{r}
+
+y = 50.5*1.35384 + 10.32632
+
+y
+
+```
+
+
+Step 2.5
+Next, you’re curious whether the number of paternally inherited DNMs match the number of maternally inherited DNMs. Plot the distribution of maternal DNMs per proband (as a histogram). In the same panel (i.e. the same set of axes) plot the distribution of paternal DNMs per proband. Make sure to make the histograms semi-transparent so you can see both distributions.
+
+
+```{r}
+
+ggplot() +
+  geom_histogram(data = dnm_combined, aes(x = n_maternal_dnm, fill = "Maternal"), 
+                 alpha = 0.5, color = "white", binwidth = 1) +
+  geom_histogram(data = dnm_combined, aes(x = n_paternal_dnm, fill = "Paternal"), 
+                 alpha = 0.5, color = "white", binwidth = 1) +
+  xlab("Number of inherited DNMs") +
+  ylab("Count") +
+  ggtitle("Count comparison of the number of paternally vs maternally inherited DNMs") +
+  scale_fill_manual(name = "Inheritance Type", values = c("Maternal" = "orchid2", "Paternal" = "skyblue2")) +
+  theme_classic() +
+  theme(legend.key.size = unit(0.2, "cm"))
+
+```
+
+
+Step 2.6
+Now that you’ve visualized this relationship, you want to test whether there is a significant difference between the number of maternally vs. paternally inherited DNMs per proband. What would be an appropriate statistical model to test this relationship? Fit this model to the data.
+
+After performing your test, answer the following questions:
+
+What statistical test did you choose? Why?
+
+Was your test result statistically significant? Interpret your result as it relates to the number of paternally and maternally inherited DNMs.
+
+
+```{r}
+
+#Statistical test = paired t-test -> looks bi-modal but actually is unimodal 
+res1 <- t.test(dnm_combined$n_maternal_dnm, dnm_combined$n_paternal_dnm, paired = TRUE)
+res1
+
+#default parameters is two vs one tailed 
+
+#each proband is an individual that is paired and coming from the same person 
+
+#p-value < 2.2e-16 -> yes statistically significant 
+
+#one tail vs two tailed t-tests (more conservative than one tail) -> one is bigger/smaller than the other (if you don't have a histogram to guide you) - use a two-tailed + check syntax order 
+
+```
+
