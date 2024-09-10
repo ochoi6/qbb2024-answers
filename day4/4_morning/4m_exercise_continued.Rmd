@@ -1,0 +1,85 @@
+---
+title: "4m_exercise_continued"
+output: html_document
+date: "2024-09-10"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+PYTHON DICTIONARIES 
+
+#Question 7 
+
+Finally, you can visualize how variable each gene’s expression is. Download the data, load it into R, and create a violin plot of expression levels broken down by gene (ggplot2’s geom_violin()).
+For categories, create a combination of tissue names and gene IDs (dplyr::mutate(Tissue_Gene=paste0(Tissue, " ", GeneID)))
+
+
+```{r}
+
+#Load tidyverse library into the current R environment 
+library(tidyverse)
+
+#Load into the tsv file into the current R environment and save as 'dicts_expression'
+dicts_expression <- read_tsv("dicts_expr.tsv")
+
+#Print the dictionary expression tsv file to see that it is properly loaded 
+head(dicts_expression)
+
+```
+
+
+```{r}
+
+#Using the 'mutate' command, create a new category called 'Tissue_Gene' to combine tissue names + gene IDs and save it back into 'dict_expression'
+dicts_expression <- dicts_expression %>% 
+  mutate(Tissue_Gene = paste0(Tissue, " ", GeneID))
+
+#Print 'dicts_expression$Tissue_Gene' to see if it worked 
+head(dicts_expression$Tissue_Gene)
+
+```
+
+
+```{r}
+
+#Had trouble with the 'Expr' column being characters so I manually changed it to numerical values 
+dicts_expression$Expr <- as.numeric(dicts_expression$Expr)
+
+#Using the 'mutate' command, create a new column called 'log_exprs' by taking the log of the expression value and pseudocount of 1 
+dicts_expression <- dicts_expression %>% 
+  mutate(log_exprs = log(Expr + 1))
+
+#Print 'dicts_expression$log_exprs' to see if it worked 
+head(dicts_expression$log_exprs)
+
+```
+
+
+
+
+```{r}
+
+#Create a ggplot violin plot and flip the x, y coordinates for the new Tissue, Gene category and its correspodning log pseudocount +1 expression value 
+ggplot(data = dicts_expression, 
+       mapping = aes(x = Tissue_Gene, 
+                     y = log_exprs, 
+                     fill = Tissue_Gene)) +
+  geom_violin() +
+  coord_flip() +
+  xlab("Corresponding geneID to tissues") +
+  ylab("Log expression values") + 
+  ggtitle("Visualizing the log expression values for each gene ID and its corresponding tissue") +
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5, 
+                                  size = 7.5)) + 
+  theme(legend.position = "none")
+
+```
+
+
+
+
+
+
