@@ -25,10 +25,8 @@ You’ll start by exploring the data in aau1043_dnm.csv. First, load this data i
 
 ```{r}
 
-##aau1043_dnm.csv file 
-
 #Reading in the 'aau1043_dnm.csv' file into my environment as 'dnm'
-dnm <- read_csv(file = "/Users/cmdb/qbb2024/day4/aau1043_dnm.csv")
+dnm <- read_csv(file = "/Users/cmdb/qbb2024-answers/day4/4_afternoon/aau1043_dnm.csv")
 
 #Printing the dnm dataframe to cheeck it was loaded in correctly 
 head(dnm)
@@ -38,6 +36,7 @@ head(dnm)
 
 Step 1.2
 Use group_by() and summarize() to tabulate the number of paternally and maternally inherited DNMs in each proband. Note that the maternal versus paternal origin of the mutations are recorded in the column titled Phased_combined.
+
 
 ```{r}
 
@@ -52,7 +51,7 @@ dnm_summary <- dnm %>%
   )
 
 #Printing the result to see 
-print(dnm_summary)
+head(dnm_summary)
 
 ```
 
@@ -65,9 +64,9 @@ Now, load the data from aau1043_parental_age.csv into a new dataframe.
 ##aau1043_parental_age.csv 
 
 #Reading in the 'aau1043_parental_age.csv' file into my environment as 'ages'
-ages <- read_csv(file = "/Users/cmdb/qbb2024/day4/aau1043_parental_age.csv")
+ages <- read_csv(file = "/Users/cmdb/qbb2024-answers/day4/4_afternoon/aau1043_parental_age.csv")
 
-#Printing the ages dataframe to cheeck it was loaded in correctly 
+#Printing the ages data-frame to check it was loaded in correctly 
 head(ages)
 
 ```
@@ -78,14 +77,20 @@ You now have two dataframes with complementary information. It would be nice to 
 
 ```{r}
 
-#Using 'left_join()' to combining the dataframes together 
+#Using 'left_join()' to combine the data-frames together 
 dnm_combined <- left_join(dnm_summary, ages, by = "Proband_id")
+
+
+#Printing 'dnm_combined' to check that the left_join properly worked 
+head(dnm_combined)
 
 ```
 
 
 
 #QUESTION 2. Fit and interpret linear regression models 
+
+Using the merged dataframe from the previous section, you will be exploring the relationships between different features of the data.
 
 Step 2.1
 First, you’re interested in exploring if there’s a relationship between the number of DNMs and parental age. Use ggplot2 to plot the following. All plots should be clearly labelled and easily interpretable.
@@ -104,7 +109,7 @@ ggplot(data = dnm_combined,
   geom_smooth(method = "lm") +
   xlab("Mother age (years)") +
   ylab("Number of maternal de novo mutations") +
-  ggtitle("The count of maternal de novo mutations vs. maternal age") +
+  ggtitle("The number of maternal de novo mutations vs. maternal age") +
   theme_classic() +
   theme(plot.title = element_text(hjust = 0.5, 
                                   size = 15)) 
@@ -123,7 +128,7 @@ ggplot(data = dnm_combined,
   geom_smooth(method = "lm") +
   xlab("Father age (years)") +
   ylab("Numner of paternal de novo mutations") +
-  ggtitle("The count of paternal de novo mutations vs. paternal age") +
+  ggtitle("The number of paternal de novo mutations vs. paternal age") +
   theme_classic() +
   theme(plot.title = element_text(hjust = 0.5, 
                                   size = 15)) 
@@ -132,11 +137,9 @@ ggplot(data = dnm_combined,
 
 
 Step 2.2
-Now that you’ve visualized these relationships, you’re curious whether they’re statistically significant. Fit a linear regression model to the data using the lm() function.
+Now that you’ve visualized these relationships, you’re curious whether they’re statistically significant. 
 
-What is the “size” of this relationship? In your own words, what does this mean? Does this match what you observed in your plots in step 2.1?
-
-Is this relationship significant? How do you know? In your own words, what does this mean?
+2.2A: Fit a linear regression model to the data using the lm() function.
 
 ```{r}
 
@@ -144,48 +147,94 @@ Is this relationship significant? How do you know? In your own words, what does 
 mom_lm <- lm(data = dnm_combined, 
              formula = n_maternal_dnm ~ 1 + Mother_age) %>% 
                summary()
-  
+
+#Print the linear regression result on 'dnm_combined' for the 2 variables saved in 'mom_lm' 
 mom_lm
-
-#Size of this relationship = 2.5 
-#every unit (year) of mother's age, approximately 0.37757 number of de novo mutations occur
-#each unit of mother's age, the number of de novo mutations increases by 0.37757 (linear = slope
-
 
 ```
 
+2.2B: What is the “size” of this relationship? In your own words, what does this mean? Does this match what you observed in your plots in step 2.1?
+
+  ANSWER: 2.5 is the size of this relationship. This means that for each unit of the mother's age,
+  the number of de novo mutations increases by 0.37757. This does match the scatterplot figure drawn
+  in step 2.1 because the intercept and slope seem to relatively match up to the numbers written
+  here. 
+
+
+2.2C: Is this relationship significant? How do you know? In your own words, what does this mean?
+
+  ANSWER: This relationship is significant based on the p-value. The p-value is less than 2.2e-16
+  and commonly used significance p-value comparisons are either 0.05 or 0.01. This extremely small
+  value means that the relationship between the age of the mother and the number of de novo
+  mutations occurring is highly unlikely to have occurred by random chance, aka leading us to reject
+  the null hypothesis and accept that these 2 variables have a statistically significant
+  relationship to each other.  
+  
+
+
 Step 2.3
-As before, fit a linear regression model, but this time to test for an association between paternal age and paternally inherited de novo mutations.
 
-What is the “size” of this relationship? In your own words, what does this mean? Does this match what you observed in your plots in step 2.1?
+2.3A: As before, fit a linear regression model, but this time to test for an association between paternal age and paternally inherited de novo mutations.
 
-Is this relationship significant? How do you know? In your own words, what does this mean?
 
 ```{r}
 
+#Performing lm based on the variables used in the plot above and saving the summarized results in 'dad_lm'
 dad_lm <- lm(data = dnm_combined, 
              formula = n_paternal_dnm ~ 1 + Father_age) %>% 
                summary()
-  
+
+#Print the linear regression result on 'dnm_combined' for the 2 variables saved in 'mom_lm' 
 dad_lm
 
-1.35384
-
 ```
+
+2.3B: What is the “size” of this relationship? In your own words, what does this mean? Does this match what you observed in your plots in step 2.1?
+
+  ANSWER: 10.32632 is the size of this relationship. This means that for each unit of the father's
+  age, the number of de novo mutations increases by 1.35384. This does match the scatterplot figure
+  drawn in step 2.1 because the intercept and slope seem to relatively match up to the numbers
+  written here.   
+
+
+2.3C: Is this relationship significant? How do you know? In your own words, what does this mean?
+
+  ANSWER: This relationship is significant based on the p-value. The p-value is less than 2.2e-16
+  and commonly used significance p-value comparisons are either 0.05 or 0.01. This extremely small
+  value means that the relationship between the age of the father and the number of de novo
+  mutations occurring is highly unlikely to have occurred by random chance, aka leading us to reject
+  the null hypothesis and accept that these 2 variables have a statistically significant
+  relationship to each other. 
+  
+
+
 
 Step 2.4
 Using your results from step 2.3, predict the number of paternal DNMs for a proband with a father who was 50.5 years old at the proband’s time of birth. Record your answer and your work (i.e. how you got to that answer).
 
 ```{r}
 
-y = 50.5*1.35384 + 10.32632
+#Equation used to predict the number of paternal DNMs for a proband with a father who was 50.5 years of age 
+y = 50.5*1.35384 + 10.32632 
 
+#Based on the linear regression slope equation: y = m*x + b
+  #10.32632 = intercept (b)
+  #50.5 = the age of the father given (x)
+  #1.35384 = the slope (m)
+  #y = result we are looking for 
+
+#Print 'y'
 y
+
+#ANSWER: I predict that there will be 78.69524 paternal DNMs for a proband with a father who was 505.5 years old. 
 
 ```
 
 
+
+
 Step 2.5
+
 Next, you’re curious whether the number of paternally inherited DNMs match the number of maternally inherited DNMs. Plot the distribution of maternal DNMs per proband (as a histogram). In the same panel (i.e. the same set of axes) plot the distribution of paternal DNMs per proband. Make sure to make the histograms semi-transparent so you can see both distributions.
 
 
@@ -207,28 +256,36 @@ ggplot() +
 
 
 Step 2.6
-Now that you’ve visualized this relationship, you want to test whether there is a significant difference between the number of maternally vs. paternally inherited DNMs per proband. What would be an appropriate statistical model to test this relationship? Fit this model to the data.
 
-After performing your test, answer the following questions:
-
-What statistical test did you choose? Why?
-
-Was your test result statistically significant? Interpret your result as it relates to the number of paternally and maternally inherited DNMs.
+2.6A: Now that you’ve visualized this relationship, you want to test whether there is a significant difference between the number of maternally vs. paternally inherited DNMs per proband. What would be an appropriate statistical model to test this relationship? Fit this model to the data.
 
 
 ```{r}
 
 #Statistical test = paired t-test -> looks bi-modal but actually is unimodal 
 res1 <- t.test(dnm_combined$n_maternal_dnm, dnm_combined$n_paternal_dnm, paired = TRUE)
+
+#Print the results saved in 'res'
 res1
-
-#default parameters is two vs one tailed 
-
-#each proband is an individual that is paired and coming from the same person 
-
-#p-value < 2.2e-16 -> yes statistically significant 
-
-#one tail vs two tailed t-tests (more conservative than one tail) -> one is bigger/smaller than the other (if you don't have a histogram to guide you) - use a two-tailed + check syntax order 
 
 ```
 
+
+After performing your test, answer the following questions:
+
+2.6B: What statistical test did you choose? Why?
+
+  ANSWER: I chose the paired t-test for my statistical model because we are looking at paired observations.
+  Each proband has 2 measured values: the number of maternally inherited DNMs and the number of paternally
+  inherited DNMs. Since these values come from the same individual, they are not independent of each other. To
+  account for this type of data, a paired t-test is best because it tests for differences in means between 2
+  related data measurements for a shared sample entry. 
+
+2.6C: Was your test result statistically significant? Interpret your result as it relates to the number of paternally and maternally inherited DNMs.
+
+  ANSWER: My result was statistically significant because the p-value is less than 2.2e-16, which is much
+  smaller than the commonly used significance p-value comparisons 0.05 or 0.01. The highly significant p-value
+  means that the observed difference between the number of maternally and paternally inherited DNMs per
+  proband is very unlikely to have occurred by chance. Ultimately, we can state that the number of de novo
+  mutations inherited from one parent (either maternally or paternally) differs significantly from the number
+  inherited from the other parent (again, either maternally or paternally). 
