@@ -1,0 +1,109 @@
+---
+title: "4m_exercise_continued"
+output: html_document
+date: "2024-09-10"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+PYTHON DICTIONARIES 
+
+#Question 7 
+
+Finally, you can visualize how variable each gene’s expression is. Download the data, load it into R, and create a violin plot of expression levels broken down by gene (ggplot2’s geom_violin()).
+
+For categories, create a combination of tissue names and gene IDs (dplyr::mutate(Tissue_Gene=paste0(Tissue, " ", GeneID)))
+
+
+
+```{r}
+
+#Load tidyverse library into the current R environment 
+library(tidyverse)
+
+#Load the tsv file into the current R environment and save as 'dicts_expression'
+dicts_expression <- read_tsv("dicts_expr.tsv")
+
+#Print the dictionary expression tsv file to see that it is properly loaded 
+head(dicts_expression)
+
+```
+
+
+
+```{r}
+
+#Using the 'mutate' command, create a new category called 'Tissue_Gene' to combine tissue names + gene IDs and save it back into 'dict_expression'
+dicts_expression <- dicts_expression %>% 
+  mutate(Tissue_Gene = paste0(Tissue, " ", GeneID))
+
+#Print 'dicts_expression$Tissue_Gene' to see if it worked 
+head(dicts_expression$Tissue_Gene)
+
+```
+
+
+
+```{r}
+
+#Had trouble with the 'Expr' column being characters so I manually changed it to numerical values 
+dicts_expression$Expr <- as.numeric(dicts_expression$Expr)
+
+#Using the 'mutate' command, create a new column called 'log_exprs' by taking the log of the expression value and pseudocount of 1 
+dicts_expression <- dicts_expression %>% 
+  mutate(log_exprs = log(Expr + 1))
+
+#Print 'dicts_expression$log_exprs' to see if it worked 
+head(dicts_expression$log_exprs)
+
+```
+
+
+
+
+```{r}
+
+#Create a ggplot violin plot and flip the x, y coordinates for the new Tissue, Gene category and its correspodning log pseudocount +1 expression value 
+ggplot(data = dicts_expression, 
+       mapping = aes(x = Tissue_Gene, 
+                     y = log_exprs, 
+                     fill = Tissue_Gene)) +
+  geom_violin() +
+  coord_flip() +
+  xlab("Corresponding geneID to tissues") +
+  ylab("Log expression values") + 
+  ggtitle("Visualizing the log expression values for each gene ID and its corresponding tissue") +
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5, 
+                                  size = 7)) + 
+  theme(legend.position = "none")
+
+```
+
+
+Questions on the results: 
+
+A. Given the tissue specificity and high expression level of these genes, are you surprised by the results?
+
+  Answer: 
+  
+  Given the tissue specificity and high expression levels of these genes, I was somewhat surprised by the         high variability in the data. I initially expected the expression levels of each gene to be more
+  clustered within each tissue type. However, the data revealed was much more spread out than I imagined, with
+  the expression levels differing quite significantly (for example: the 3rd stomach gene ranges from 0 to
+  greater than 10). Despite this, the high log expression values were not unexpected. Given that the raw
+  expression values were already quite large (in the thousands range), the high log expression values align with
+  my expectations. The log values simply reflect the large magnitude of gene expression in specific tissues,
+  reinforcing that these genes are indeed highly expressed where they are active.
+
+
+B. What tissue-specific differences do you see in expression variability? Speculate on why certain tissues show low variability while others show much higher expression variability.
+
+  Answer: 
+  
+  Except for pancreas, it seems that all the other tissues (liver, lung, minor salivary gland, thyroid, testis,
+  stomach, small intestine, prostrate, and pituitary) have high variability. From those with high, stomach,       small intestine, prostrate, and pituitary are extremely spread out. I feel that specialized organs like the
+  pancreas, usually have a limited number of roles and functions in the body. In comparison, the small intestine
+  or pituitary gland has much more complex and diverse functions, which probably results in this higher
+  variablity in expression. 
