@@ -1,0 +1,81 @@
+---
+title: "q1_6b"
+output: html_document
+date: "2024-09-20"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+
+# Importing the 'tidyverse' package into the current R environment 
+library(tidyverse)
+
+# Read in the file produced from question 1.6a python file and rename it to 'gc_1_6'
+gc_1_6 <- read_tsv("/Users/cmdb/qbb2024-answers/quantbio_lab_fall24/week1_09132024/question_1/q1_6_genome_coverage.txt", col_names = FALSE)
+
+# Print 'gc_1_6' 
+head(gc_1_6)
+
+```
+
+
+
+```{r}
+
+# Create the backbone of the histogram using the genome coverage values from the saved dataframe 
+histogram_plot <- ggplot(gc_1_6, aes(x = X1)) +
+  geom_histogram(aes(y = ..count..), binwidth = 1, color = "black", fill = "lightskyblue3") +
+  labs(title = "Histogram of the genome coverage with poisson and normal distributions for 30x coverage",
+       x = "Depth of genome coverage",
+       y = "Frequency") +
+  theme_classic() +
+  theme(plot.title = element_text(size = 11.5)) 
+
+
+# Printing the histogram to see if it worked 
+histogram_plot
+
+# Saving the mean and standard deviation coverage values as specified in the question 
+mean_coverage <- 30
+stddev_coverage <- 5.47
+
+# Printing to check that the variables stored the correct values 
+print(mean_coverage)
+print(stddev_coverage)
+
+# Poisson distribution and multiplying by 1,000,000 to account for scale + saving the values in a variable called 'poisson_values' 
+poisson_values <- dpois(gc_1_6$X1, lambda = 30) * 1000000
+
+# Normal distribution and multiplying by 1,000,000 to account for scale + saving the values in a variable called 'normal_values' 
+normal_values <- dnorm(gc_1_6$X1, mean = mean_coverage, sd = stddev_coverage) * 1000000
+
+# Adding lines that follow the spread of the poisson and normal distribution values + applying different colors to each to distinguish them + adding a legend that demonstrates this 
+histogram_plot <- histogram_plot +
+  geom_line(aes(y = poisson_values, color = "Poisson"), linewidth = 1, linetype = "solid") +
+  geom_line(aes(y = normal_values, color = "Normal"), linewidth = 1, linetype = "solid") +
+  scale_color_manual(values = c("Poisson" = "navyblue", "Normal" = "red4")) +
+  labs(color = "Distribution")
+
+# Printing the new histogram that has the genome coverage values with the added distribution lines 
+histogram_plot
+
+# Saving the histogram as 'ex1_30x_cov.png' 
+ggsave("ex1_30x_cov.png", plot = histogram_plot)
+
+```
+
+
+
+
+
+
+
+
+
+
+
