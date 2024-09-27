@@ -1,0 +1,65 @@
+---
+title: "question 2.2"
+output: html_document
+date: "2024-09-26"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+STEP 2.2 : Use R to plot data 
+
+Instructions : Once you have your SNP enrichment values for each MAF and feature, write an R script that loads them into a data frame and plots them using ggplot2. The plot should have 4 lines, one for each feature with the MAF on the X-axis and the log2-transformed enrichment on the Y-axis. You should include a legend and label your axes.
+
+
+
+```{r}
+
+# Loading the tidyverse package into my current R environment 
+library(tidyverse)
+
+# Loading the snp_counts.txt into current R environment and re-naming it as 'snp_enrichment_values'
+snp_enrichment_values <- read.table("~/qbb2024-answers/quantbio_lab_fall24/week2_09202024/question_2/snp_counts.txt", header = TRUE, sep = "\t")
+
+# Printing 'snp_enrichment_values' to check that it was loaded properly 
+head(snp_enrichment_values)
+
+```
+
+
+
+```{r}
+
+# Peforming log2 transformation on expression values and saving it into a new column called 'log2_enrichment' in the 'snp_enrichment_values' dataframe using mutate command 
+snp_enrichment_values <- snp_enrichment_values %>% 
+  mutate(log2_enrichment = log2(Enrichment))
+
+# Printing the newly created 'log2_enrichment' variable to check that the log transformation was done and saved correctly 
+snp_enrichment_values$log2_enrichment 
+
+```
+
+
+
+```{r}
+
+# Plotting SNP enrichment for each feature as a line plot using ggplot and since we want lines, I use the 'geom_line' command 
+ggplot(snp_enrichment_values, 
+       aes(x = MAF, y = log2_enrichment, color = Feature)) + # Using color = Feature to differentiate between the 4 different feature files 
+  geom_line() +
+  ggtitle("Examining SNP enrichment vs. minor allele frequency across different features") +
+  xlab("Minor allele frequency (MAF)") +
+  ylab("Log2-transformed enrichment values") + 
+  theme_classic() # Using this theme command to get rid of the grey line background 
+
+# Saving the line plot created above into a pdf file called 'snp_enrichments.pdf' 
+ggsave("snp_enrichments.pdf")
+
+```
+
+
+
+
+
