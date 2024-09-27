@@ -61,5 +61,3 @@ do
 done
 
 
-# SUM=$(awk '{s+=$1}END{print s}' <filename>) #$1 = first column of our file an
-
