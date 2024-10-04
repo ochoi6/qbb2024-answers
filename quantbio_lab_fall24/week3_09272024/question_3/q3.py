@@ -18,7 +18,7 @@
 
 ## QUESTION 3.1: Interpret this figure in two or three sentences in your own words. Does it look as expected? Why or why not? Bonus: what is the name of this distribution?
 
-    # ANSWER FOR 3.1: 
+    # ANSWER FOR 3.1: Yes, the figure looks as expected because it shows that there are variants in our data but the overall distribution of it is on the lower side since having many new mutations is rarer. Additionally, the figure displays a normal bell curve distribution. 
 
 
 
@@ -32,7 +32,7 @@
 
 ## QUESTION 3.2: Interpret this figure in two or three sentences in your own words. Does it look as expected? Why or why not? Bonus: what is the name of this distribution?
 
-    # ANSWER FOR 3.1: 
+    # ANSWER FOR 3.2: If this is the vcf that is connected to the sequencing coverage I caluclated for question 1, it makes sense because I calculated there is around 4x coverage for the reads. We can see that the general trend is the read depth is between the 4 and 5 range. The distribution is positively skewed normal distribution.  
 
 
 
