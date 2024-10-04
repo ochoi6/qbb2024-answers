@@ -1,0 +1,83 @@
+---
+title: "q3_2 and q3_3"
+output: html_document
+date: "2024-10-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+PLOTTING FOR STEP 3.2
+
+```{r}
+
+# Importing tidyverse package into the current R environment 
+library(tidyverse)
+
+# Reading in the AF.txt file and saving it into a df called 'allele_fq'
+allele_fq <- read_tsv("/Users/cmdb/qbb2024-answers/quantbio_lab_fall24/week3_09272024/week3_data/AF.txt")
+
+# Printing 'allele_fq' to see that it was properly loaded 
+print(allele_fq)
+
+```
+
+
+```{r}
+
+# Creating a histogram using ggplot 
+ggplot(data = allele_fq, 
+       aes(x = Allele_Frequency)) +
+  geom_histogram(bins = 11,  # using bins = 11 as stated in directions 
+                 color = "white", # Creating an outline of each bin
+                 mapping = aes(fill = after_stat(count))) + # Filling in each mapping bin count to better see each distirbution bar 
+  xlab("Allele frequencies") + # x-axis title 
+  ylab("Distribution") + # y-axis title 
+  ggtitle("Distribution of the allelic frequencies for the variants") + # main graph title 
+  scale_fill_gradient(low = "#7286D3", high = "#88C9BF") + # creating a manual scale gradient using pastel colors to see the count distribution 
+  theme_classic() + # getting rid of the grid and gray background 
+  theme(plot.title = element_text(hjust = 0.5)) # centering the title 
+
+# Saving the created histogram plot into a png file 
+ggsave("q3_2_allele_frequency_histogram.png")
+
+```
+
+PLOTTING FOR STEP 3.3
+
+
+```{r}
+
+# Reading in the DF.txt file and saving it into a df called 'read_depth'
+read_depth <- read_tsv("/Users/cmdb/qbb2024-answers/quantbio_lab_fall24/week3_09272024/week3_data/DP.txt")
+
+# Printing 'read_depth' to see that it was properly loaded 
+print(read_depth)
+
+```
+
+```{r}
+
+# Creating a histogram using ggplot 
+ggplot(data = read_depth, 
+       aes(x = Read_Depth)) +
+   geom_histogram(bins = 11,  # using bins = 11 as stated in directions 
+                 color = "white", # Creating an outline of each bin
+                 mapping = aes(fill = after_stat(count))) + # Filling in each mapping bin count to better see each distirbution bar 
+  xlim(0, 20) +  # setting x-axis limits
+  xlab("Read Depth") +  # x-axis title 
+  ylab("Distribution") + # y-axis title
+  ggtitle("Distribution of read depths at each variant across all samples") + # main graph title 
+  scale_fill_gradient(low = "#7286D3", high = "#88C9BF") + # creating a manual scale gradient using pastel colors to see the count distribution 
+  theme_classic() + # getting rid of the grid and gray background 
+  theme(plot.title = element_text(hjust = 0.5)) # centering the title 
+
+# Saving the created histogram plot into a png file 
+ggsave("q3_3_read_depth_distribution_histogram.png")
+
+```
+
+
+
