@@ -13,6 +13,11 @@
 ### QUESTION 1.1
     # How long are the sequencing reads?
 
+## ANSWER FOR 1.1 :
+    # The sequencing reads are 76 base pairs long. 
+
+
+
 ## CODE FOR 1.1 : 
 
 # Printing 'A01_09.fastq' file to double check its format: each read has 4 lines (identifier, sequence, sign + identifier, and quality scores)
@@ -34,12 +39,8 @@ read_length=$(head -n 2 ~/qbb2024-answers/quantbio_lab_fall24/week3_09272024/wee
     # tail -n 1 -> from those 2 lines, the one of interest is the second one because it contains the sequence 
     # awk '{print length}' -> using 'awk' command to print the length of the sequence 
 
-# Printing 'read_length' variable to see what the length of the sequnece is 
+# Printing 'read_length' variable to see what the length of the sequnece is (read_length = 76)
 echo $read_length
-
-
-## ANSWER FOR 1.1 :
-    # The sequencing reads are 76 base pairs long. 
 
 
 
@@ -47,6 +48,9 @@ echo $read_length
 
 ### QUESTION 1.2 
     # How many reads are present within the file?
+
+## ANSWER FOR 1.2 : 
+    # There are 669,548 reads present in this file 
 
 ## CODE FOR 1.2 : 
 
@@ -68,35 +72,67 @@ number_of_reads=$((lines_in_file / 4))
 echo $number_of_reads
 
 
-## ANSWER FOR 1.2 : 
-    # There are 669,548 reads present in this file 
-
-
 
 
 
 ### QUESTION 1.3
     # Given your answers to 1 and 2, as well as knowledge of the length of the S. cerevisiae reference genome, what is the expected average depth of coverage?
 
-## CODE FOR 1.3 : 
-# Yeast genome = ~ 0.1 GB 
-# Reads = 669,548 
-# Length of reads = 76 bp 
+## ANSWER FOR 1.3 : 4x coverage 
 
-# genome_length = 12157105
+## CODE FOR 1.3 : 
+# Yeast genome = ~ 0.1 GB (know this from Bob's lecture)
+# Reads = 669,548 (know this from question 1.2)
+# Length of reads = 76 bp (know this from question 1.1)
+
+# Using 'awk' command to process the yeast genome file sacCer3.fa line by line
 genome_length=$(awk '/^>/ {next} {total += length($0)} END {print total}' ~/qbb2024-answers/quantbio_lab_fall24/week3_09272024/week3_data/sacCer3.fa)
+    # Used ''/^>/ {next}' to skip any line that has a new header
+    # '{total += length($0)}' to take each non-header line to calculate the length of the sequence and then add it to the cumulative total
+    # 'END {print total}' to give me a total sum of the lengths of each non-header line in the genome file 
+    # Saving the results of it into the variable called 'genome_length'
+
+# Printing the variable 'genome_length' and gettung the result 12157105
 echo $genome_length
 
-# coverage = 4 
+# Calculating coverage based on Michael Schatz's lecture and saving it into the variable called 'coverage'
 coverage=$((read_length*number_of_reads/genome_length))
+
+# Printing the variable 'coverage' to getting the result ~4.18x 
 echo $coverage
 
-## ANSWER FOR 1.3 : 4x coverage 
+
+
+
 
 ### QUESTION 1.4 
     # While you do not need to repeat for all samples, looking at the size of the files can give us information about whether we have similar amounts of data from other samples. 
     # Use the du command to check the file sizes of the rest of the samples. Which sample has the largest file size (and what is that file size, in megabytes)? 
     # Which sample has the smallest file size (and what is that file size, in megabytes)?
+
+## ANSWER FOR 1.4 : Largest file size is A01_62.fastq at 149 MB and the smallest file size is A01_27.fastq at 110 MB. 
+
+## CODE FOR 1.4 : 
+
+# Using 'du' to compare file sizes 
+du -sh ~/qbb2024-answers/quantbio_lab_fall24/week3_09272024/week3_data/* | sort -h
+    # Using the 'du' command as noted in the question with the '-sh' option to summarize the total size of each file using human readable metrics 
+    # Included 'sort -h' to  sort the output of du by size from smallest to largest 
+
+# Output of the du command used above 
+
+#110M	/Users/cmdb/qbb2024-answers/quantbio_lab_fall24/week3_09272024/week3_data/A01_27.fastq
+#111M	/Users/cmdb/qbb2024-answers/quantbio_lab_fall24/week3_09272024/week3_data/A01_31.fastq
+#113M	/Users/cmdb/qbb2024-answers/quantbio_lab_fall24/week3_09272024/week3_data/A01_63.fastq
+#119M	/Users/cmdb/qbb2024-answers/quantbio_lab_fall24/week3_09272024/week3_data/A01_11.fastq
+#122M	/Users/cmdb/qbb2024-answers/quantbio_lab_fall24/week3_09272024/week3_data/A01_09.fastq
+#129M	/Users/cmdb/qbb2024-answers/quantbio_lab_fall24/week3_09272024/week3_data/A01_23.fastq
+#130M	/Users/cmdb/qbb2024-answers/quantbio_lab_fall24/week3_09272024/week3_data/A01_39.fastq
+#145M	/Users/cmdb/qbb2024-answers/quantbio_lab_fall24/week3_09272024/week3_data/A01_24.fastq
+#146M	/Users/cmdb/qbb2024-answers/quantbio_lab_fall24/week3_09272024/week3_data/A01_35.fastq
+#149M	/Users/cmdb/qbb2024-answers/quantbio_lab_fall24/week3_09272024/week3_data/A01_62.fastq
+
+
 
 
 
@@ -107,8 +143,9 @@ echo $coverage
     # How does this translate to the probability that a given base is an error? 
     # Do you observe much variation in quality with respect to the position in the read?
 
+## ANSWER FOR 1.5 : The median base quality along the read is around 35. This means that the probability that a given base is an error is 10^-3.5. Variation seems to increase towards the beginning and end of the read in terms of position, while it stabilizes into a plateau in the middle. 
+
+# Running fastqc on all the fastq files 
 FastQC ~/qbb2024-answers/quantbio_lab_fall24/week3_09272024/week3_data/A01_*.fastq
 
-# Median base quality = 35 
-# base error is 10^-3.5 
-# variation seems to increase towards the beginning and end of the read
+
