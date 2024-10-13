@@ -1,4 +1,4 @@
----
+=---
 title: "q3_2 and q3_3"
 output: html_document
 date: "2024-10-04"
@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 PLOTTING FOR STEP 3.2
+
 
 ```{r}
 
@@ -31,12 +32,12 @@ print(allele_fq)
 ggplot(data = allele_fq, 
        aes(x = Allele_Frequency)) +
   geom_histogram(bins = 11,  # using bins = 11 as stated in directions 
-                 color = "white", # Creating an outline of each bin
-                 mapping = aes(fill = after_stat(count))) + # Filling in each mapping bin count to better see each distirbution bar 
+                 color = "white", # creating an outline of each bin
+                 mapping = aes(fill = after_stat(count))) + # filling in each mapping bin count to better see each distribution bar 
   xlab("Allele frequencies") + # x-axis title 
   ylab("Distribution") + # y-axis title 
   ggtitle("Distribution of the allelic frequencies for the variants") + # main graph title 
-  scale_fill_gradient(low = "#7286D3", high = "#88C9BF") + # creating a manual scale gradient using pastel colors to see the count distribution 
+  scale_fill_gradient(low = "#7286D3", high = "#88C9BF", name = "Count") + # creating a manual scale gradient using pastel colors to see the count distribution 
   theme_classic() + # getting rid of the grid and gray background 
   theme(plot.title = element_text(hjust = 0.5)) # centering the title 
 
@@ -44,6 +45,8 @@ ggplot(data = allele_fq,
 ggsave("q3_2_allele_frequency_histogram.png")
 
 ```
+
+
 
 PLOTTING FOR STEP 3.3
 
@@ -58,19 +61,20 @@ print(read_depth)
 
 ```
 
+
 ```{r}
 
 # Creating a histogram using ggplot 
 ggplot(data = read_depth, 
        aes(x = Read_Depth)) +
-   geom_histogram(bins = 11,  # using bins = 11 as stated in directions 
-                 color = "white", # Creating an outline of each bin
-                 mapping = aes(fill = after_stat(count))) + # Filling in each mapping bin count to better see each distirbution bar 
+   geom_histogram(bins = 21,  # using bins = 11 as stated in directions 
+                 color = "white", # creating an outline of each bin
+                 mapping = aes(fill = after_stat(count))) + # Filling in each mapping bin count to better see each distribution bar 
   xlim(0, 20) +  # setting x-axis limits
   xlab("Read Depth") +  # x-axis title 
   ylab("Distribution") + # y-axis title
   ggtitle("Distribution of read depths at each variant across all samples") + # main graph title 
-  scale_fill_gradient(low = "#7286D3", high = "#88C9BF") + # creating a manual scale gradient using pastel colors to see the count distribution 
+  scale_fill_gradient(low = "#7286D3", high = "#88C9BF", name = "Count") + # creating a manual scale gradient using pastel colors to see the count distribution 
   theme_classic() + # getting rid of the grid and gray background 
   theme(plot.title = element_text(hjust = 0.5)) # centering the title 
 
