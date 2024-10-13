@@ -39,11 +39,10 @@ done
 
     # QUESTION 2.3 : How many of the alignments are to loci on chromosome III?  
     
-        # ANSWER: 7815 read alignments to loci on chromosome III.  
+        # ANSWER: 17815 read alignments to loci on chromosome III.  
 
         # Code used for question in question 2.3: grabbing any line that contains tab-separated values of chrIII in the sam file and printing the result 
-
-
+        #grep '\tchrIII\t' A01_09.sam | wc -l
 
 ### STEP 2.5: Visualize alignments 
 
