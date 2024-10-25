@@ -8,22 +8,205 @@ date: "2024-10-13"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+Step 3.1: Loading and filtering the data
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+```{r}
 
-```{r cars}
-summary(cars)
+# Loading libraries into my R environment 
+
+library(DESeq2)
+library(vsn)
+library(matrixStats)
+library(readr)
+library(dplyr)
+library(tibble)
+library(hexbin)
+library(ggfortify)
+
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+
+# Loading 'salmon.merged.gene_counts.tsv' as the dataframe 'salmon'
+salmon <- readr::read_tsv("/Users/cmdb/qbb2024-answers/quantbio_lab_fall24/week5_10112024/week5_data/salmon.merged.gene_counts.tsv")
+
+# Changing second column of gene name to rownames 
+salmon <- column_to_rownames(salmon, var = "gene_name")
+
+# Removing gene_id column 
+salmon <- salmon %>%
+  dplyr::select(-gene_id)
+
+# Converting the numerical counts to integers for DESeq2 run 
+salmon <- salmon %>%
+  dplyr::mutate_if(is.numeric, as.integer)
+
+# Filtering for rows with >= 100 reads (removing low expression genes)
+salmon <- salmon[rowSums(salmon) > 100,]
+
+# Printing the salmon df to check that all steps prior correctly ran
+print(salmon)
+
+# Selecting for narrow samples (A1, A2-3, Cu, LFC-Fe, Fe, P1, and P2-4 = 21 total columns)
+narrow <- salmon %>% 
+  dplyr::select("A1_Rep1":"P2-4_Rep3")
+
+# Printing the narrow df to check that selection was correctly done
+print(narrow)
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+Step 3.2: Creating DESeq2 model and batch-correction
+
+
+```{r}
+
+# Creating a metadata tibble 
+narrow_metadata <- tibble(tissue=as.factor(c("A1", "A1", "A1", 
+                                            "A2-3", "A2-3", "A2-3", 
+                                            "Cu", "Cu", "Cu", 
+                                            "LFC-Fe", "LFC-Fe", "LFC-Fe", 
+                                            "Fe", "Fe", "Fe",
+                                            "P1", "P1", "P1", 
+                                            "P2-4", "P2-4", "P2-4")),
+                         rep=as.factor(c(1, 2, 3, 
+                                         1, 2, 3, 
+                                         1, 2, 3, 
+                                         1, 2, 3, 
+                                         1, 2, 3, 
+                                         1, 2, 3, 
+                                         1, 2, 3)))
+
+# Printing narrow_metadata tibble
+print(narrow_metadata)
+
+# Using 'DESeqDataSetFromMatrix' to run DESeq on the narrow data 
+narrow_data <- DESeqDataSetFromMatrix(countData = as.matrix(narrow),
+                                     colData = narrow_metadata, 
+                                     design = ~tissue)
+
+# Using 'vst' to correct narrow_data for batch effects 
+narrow_vst_data = vst(narrow_data)
+
+# Plotting narrow_vst_data to ensure that relationship between mean and variance is fine because batch effects were correctly removed 
+meanSdPlot(assay(narrow_vst_data))
+
+```
+
+
+Step 3.3: PCA analysis
+
+
+```{r}
+
+# Running PCA on the vst corrected narrow data 
+pca_narrow_vst_data <- plotPCA(narrow_vst_data, 
+                       intgroup = c("rep","tissue"), 
+                       returnData = TRUE)
+
+# Plotting PCA data 
+ggplot(pca_narrow_vst_data, 
+       aes(PC1, PC2, color = tissue, shape = rep)) +
+  geom_point(size = 5) +
+  ggtitle("PCA graph for vst-transformed narrow values") +
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Saving created PCA file as a png 
+ggsave("q3_3_PCA.png")
+
+```
+
+
+Step 3.4: Filtering genes by variance
+
+
+```{r}
+
+# Converting vst-corrected data from step 3.2 into a matrix using the command as.matrix(assay(data))
+narrow_vst_data_converted <- as.matrix(assay(narrow_vst_data))
+
+# Create a version of the data with each set of replicates averaged 
+combined <- narrow_vst_data_converted[,seq(1, 21, 3)]
+combined <- combined + narrow_vst_data_converted[,seq(2, 21, 3)]
+combined <- combined + narrow_vst_data_converted[,seq(3, 21, 3)]
+combined <- combined / 3
+
+# Printing 'combined' to see that it worked 
+head(combined)
+
+# Finding standard deviation for each gene in every row
+sds <- rowSds(combined)
+
+# Printing the standard deviation to check that the prior step worked
+head(sds)
+
+# Keeping genes that have a standard deviation > 1 to ensure consistent expression across 
+sds_filtered <- combined[sds > 1, ]
+
+# Printing the filtered standard deviations to ensure that only those > 1 were selected for 
+head(sds_filtered)
+
+# Filtering in the narrow dataset for the genes that have the standard dev > 1 
+narrow_vst_data_converted_filtered <- narrow_vst_data_converted[sds_filtered,]
+
+# Printing the filtered standard deviations in the narrow data to ensure that only those > 1 were selected for 
+head(narrow_vst_data_converted_filtered)
+
+```
+
+
+Step 3.5: K-means clustering genes
+
+
+```{r}
+
+# Setting the seed to 42
+set.seed(42)
+
+# Performing clustering (to get the cluster labels from the cluster object returned by kmeans, use $cluster)
+kmeans_clustering <- kmeans(narrow_vst_data_converted_filtered, 
+                            centers = 12)$cluster
+
+# Using cluster labels, sort the rows of your gene-filtered data matrix and then the cluster labels themselves
+ordering <- order(kmeans_clustering)
+
+kmeans_clustering <- kmeans_clustering[ordering]
+
+narrow_vst_data_converted_filtered <- narrow_vst_data_converted_filtered[ordering, ]
+
+# Open the graphics device to save the heatmap as a file
+png("q3_5_heatmap.png")
+
+# Visualizing the clusters by plotting the data as a heatmap, using the labels to color each cluster
+heatmap(narrow_vst_data_converted_filtered, 
+        Colv = NA, 
+        Rowv = NA, 
+        RowSideColors =
+        RColorBrewer::brewer.pal(12,"Paired")[kmeans_clustering])
+
+# Close the graphics device to save the file
+dev.off()
+
+```
+
+
+Step 3.6: Gene ontology enrichment analysis
+
+```{r}
+
+# Grabbing the gene names specifically for the 1st cluster from the narrow dataset and saving it as 'q3_6_genes' dataframe 
+q3_6_genes <- rownames(narrow_vst_data_converted_filtered[kmeans_clustering == 1,])
+
+# Printing 'q3_6_genes' to see that the prior step was done correctly 
+head(q3_6_genes)
+
+# Writing a table for 'q3_6_genes' as a txt file and saving it in my current working directory 
+write.table(q3_6_genes, "q3_6_genes_cluster1.txt", sep = "\n", quote = FALSE, row.names = FALSE, col.names = FALSE)
+
+```
+
