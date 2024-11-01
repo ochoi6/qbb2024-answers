@@ -1,0 +1,383 @@
+---
+title: "w7_q1_q2_q3"
+output: html_document
+date: "2024-10-30"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# EXERCISE 1 : PERFORM PRINCIPAL COMPONENT ANALYSIS 
+
+# Step 1.1: Loading data and importing libraries 
+
+```{r}
+
+### 1.1.1
+
+# Loading the 2 required llibraries mentioned in the exercise into current R environment 
+library(DESeq2)
+library(tidyverse)
+library(broom)
+
+# Loading the gene expression counts datatable and saving it as a df called 'counts'
+counts <- read_delim("week7_data/gtex_whole_blood_counts_downsample.txt")
+
+# Loading the metadata and saving it as a df called 'metadata'
+metadata <- read_delim("week7_data/gtex_metadata_downsample.txt")
+
+# Printing both df's to check that it was loaded correctly
+head(counts)
+head(metadata)
+
+```
+
+
+```{r}
+
+### 1.1.2
+
+# Moving the GENE_NAME column in 'counts' df to be the rownames using 'column_to_rownames' function 
+counts <- column_to_rownames(counts, var = "GENE_NAME")
+
+# Printing 'counts' df to ensure that the prior step was done correctly 
+head(counts)
+
+```
+
+
+```{r}
+
+### 1.1.3
+
+# Moving the column SUBJECT_ID in 'metadata' df to be the rownames using column_to_rownames() function 
+metadata <- column_to_rownames(metadata, var = "SUBJECT_ID")
+
+# Printing 'metadata' df to ensure that the prior step was done correctly 
+head(metadata)
+
+```
+
+
+```{r}
+
+### 1.1.4
+
+# Printing 'counts' and 'metadata' df to take a look at the first couple of rows, columns to understand their organization
+head(counts)
+head(metadata)
+
+```
+
+
+# Step 1.2: Create a DESeq2 object 
+
+
+```{r}
+
+### 1.2.1
+
+# Checking that the columns of the count matrix df and rows of the metadata df are in the same order 
+colnames(counts) == rownames(metadata)
+table(colnames(counts) == rownames(metadata))
+
+```
+
+
+```{r}
+
+### 1.2.2
+
+# Loading the data into a DESeq2 object using DESeqDataSetFromMatrix() function and save it as 'dds'
+dds <- DESeqDataSetFromMatrix(countData = counts, 
+                              colData = metadata, 
+                              design = ~ SEX + AGE + DTHHRDY)
+
+# Printing 'dds' to check that I have an output 
+print(dds)
+
+```
+
+
+# Step 1.3: Normalization and PCA 
+
+```{r}
+
+### 1.3.1
+
+# Applying variance stabilizing transformation (VST) using the vst() function to the DESeq2 object and store it as vsd 
+vsd <- vst(dds)
+
+# Printing vsd to check that I have an output 
+print(vsd)
+
+```
+
+
+```{r}
+
+### 1.3.2 
+
+# Applying plotPCA() function to VST-normalized data and performing it 3 times for each variable, making sure to give a different value to the intrgroup = ... argument 
+
+# PCA plot for sex variable 
+plotPCA(vsd, intgroup = "SEX") +
+  labs(title = "PCA of expression by sex", color = "Sex") + # Adding main and legend title 
+  theme_classic()  + # Getting rid of grey background and grid lines 
+  theme(plot.title = element_text(hjust = 0.5)) # Adjusting main title to be center of graph
+
+# Saving plot created above as png file named as 'w7_q1_PCA_for_sex.png'
+ggsave("w7_q1_PCA_for_sex.png")
+  
+# PCA plot for sex variable
+plotPCA(vsd, intgroup = "AGE") + 
+  labs(title = "PCA of expression by age", color = "Age") + # Adding main and legend title 
+  theme_classic()  + # Getting rid of grey background and grid lines 
+  theme(plot.title = element_text(hjust = 0.5)) # Adjusting main title to be center of graph
+
+# Saving plot created above as png file named as 'w7_q1_PCA_for_age.png'
+ggsave("w7_q1_PCA_for_age.png")
+
+# PCA plot for sex variable
+plotPCA(vsd, intgroup = "DTHHRDY") +
+  labs(title = "PCA of expression by cause of death", color = "Cause of death") + # Adding main and legend title 
+  theme_classic()  + # Getting rid of grey background and grid lines 
+  theme(plot.title = element_text(hjust = 0.5)) # Adjusting main title to be center of graph
+
+# Saving plot created above as png file named as 'w7_q1_PCA_for_death_cause.png'
+ggsave("w7_q1_PCA_for_death_cause.png")
+
+```
+
+
+```{r}
+
+### 1.3.3
+
+# QUESTION : What proportion of variance in the gene expression data is explained by each of the first two principal components? Which principal components appear to be associated with which subject-level variables? Interpret these patterns in your own words and record your answers as a comment in your code.
+
+# ANSWER: The first 2 principal components have a 48% and 7% proportion of variance. Compared to sex and age, it seems like cause of death appears to be associated with around 48% variance because it shows the strongest clustering on the PC1 x-axis. In similar logic, the 7% variance is probably associated with sex because it shows relatively stronger clustering for PC2 y-axis. 
+
+```
+
+
+
+
+# EXERCISE 2 : PERFORM DIFFERENTIAL EXPRESSION ANALYSIS 
+
+# Step 2.1: Perform 'homemade' test for differential expression between the sexes 
+
+
+```{r}
+
+### 2.1.1
+
+# Extracting vst expression matrix and saving it as 'vsd_df'
+vsd_df <- assay(vsd) %>%
+  t() %>%
+  as_tibble()
+
+# Binding vsd_df to metadata so that the whole df can be used for inputting to a regression model 
+vsd_df <- bind_cols(metadata, vsd_df)
+
+# Printing 'vsd_df' to check that it worked 
+head(vsd_df)
+
+# Testing for differential expression for the gene WASH7P using provided code and saving it into WASH7P 
+WASH7P_lm <- lm(formula = WASH7P ~ DTHHRDY + AGE + SEX, data = vsd_df) %>%
+  summary() %>%
+  tidy()
+
+# Printing WASH7P to see results from above
+WASH7P_lm
+
+# Testing for differential expression for the gene WASH7P using provided code and saving it into SLC25A47 
+SLC25A47_lm <- lm(formula = SLC25A47 ~ DTHHRDY + AGE + SEX, data = vsd_df) %>%
+  summary() %>%
+  tidy()
+
+# Printing SLC25A47 to see results from above
+SLC25A47_lm
+
+# QUESTION 2.1.1 : Does WASH7P show significant evidence of sex-differential expression (and if so, in which direction)? Explain your answer.
+
+# ANSWER 2.1.1 : No, WASH7P shows no evidence that sex differential expression is significant because the p-value for the male is 0.279, which is above the threshold for p-value significance of 0.05. 
+
+# QUESTION 2.1.2 : Now repeat your analysis for the gene SLC25A47. Does this gene show evidence of sex-differential expression (and if so, in which direction)? Explain your answer.
+
+# ANSWER 2.1.2 : YES, SLC25A47 shows evidence that sex differential expression is significant because the p-value for the male is 0.027, which is above the threshold for p-value significance of 0.05. The estimated p-value is 0.518 and because it is a positive value, we can assume that this suggests SLC25A47 expression is higher in males. 
+
+```
+
+
+# Step 2.2: Perform differential expresion analysis 'the right way' with DESeq2 
+
+
+```{r}
+
+### 2.2.1
+
+# Running DESeq on dds and results back to it 
+dds <- DESeq(dds)
+
+```
+
+
+# Step 2.3: Extract and interpret the results for sex differential expression 
+
+
+```{r}
+
+### 2.3.1
+
+# Extracting differential expression results saved in dds for the sex variable 
+resSEX <- results(dds, name = "SEX_male_vs_female")  %>%
+  as_tibble(rownames = "GENE_NAME")
+
+# Printing the extracted diff expresion results saved in resSEX to check it worked 
+head(resSEX)
+
+```
+
+
+```{r}
+
+### 2.3.2
+
+# Filtering for p-adjusted values that are below 0.1 to select for samples that have an FDR = 10% and saving results back to resSEX
+resSEX <- resSEX %>%
+  filter(padj < 0.1) %>%
+  arrange(padj)
+
+# Printing resSEX to check that the prior code worked 
+head(resSEX)
+
+# Printing the dimensions of the resSEX table to see the number of genes (shown by rows) are there 
+dim(resSEX)
+
+# QUESTION : How many genes exhibit significant differential expression between males and females at a 10% FDR?
+
+# ANSWER: 262 genes exhibit significant differential expression between males and females at a 10% FDR
+
+```
+
+
+```{r}
+
+### 2.3.3
+
+# Loading the gene location and saving it as a df called 'gene_loc'
+gene_loc <- read_delim("week7_data/gene_locations.txt")
+
+# Printing 'gene_loc' df to ensure that it was properly loaded and saved 
+head(gene_loc)
+
+# Merging gene location data to sex differential expression results saved in resSEX saved in resSEX using 'left_join' command by the gene names. Arranging the order of the merged data using p-adjusted values from smallest to largest. Saving all of this into a new df called 'gene_loc_merged'
+gene_loc_merged <- left_join(gene_loc, resSEX, by = "GENE_NAME") %>% 
+  arrange(padj)
+
+# Printing 'gene_loc_merged' df to ensure that the above steps were correctly done 
+head(gene_loc_merged)
+
+# QUESTION : Examine your top hits. Which chromosomes encode the genes that are most strongly up-regulated in males versus females, respectively? Are there more male up-regulated genes or female up-regulated genes near the top of the list? Interpret these results in your own words.
+
+# ANSWER : The sex chromosomes encode for the genes that are up-regulated in males (chromosome Y) vs females (chromosome X) respectively. It seems that there are more male genes up-regulated near the top of the list based on the top 10 output. For these top 10 genes, they have a relatively high log2-fold change of around 7 to 8, indicating very high expression up-regulation as well. 
+
+```
+
+
+```{r}
+
+### 2.3.4
+
+# Filtering the merged data frame for WASH7 gene and saving its result into a variable called 'WASH7_diff_exp'
+WASH7_diff_exp <- gene_loc_merged %>% 
+  filter(GENE_NAME == "WASH7")
+
+# Printing the results from above saved in WASH7_diff_exp
+WASH7_diff_exp
+
+# Filtering the merged data frame for WASH7 gene and saving its result into a variable called 'SLC25A47_diff_exp'
+SLC25A47_diff_exp = gene_loc_merged %>% 
+  filter(GENE_NAME == "SLC25A47")
+
+# Printing the results from above saved in SLC25A47_diff_exp
+SLC25A47_diff_exp
+
+# QUESTION : Examine the results for the two genes (WASH7P and SLC25A47) that you had previously tested with the basic linear regression model in step 2.1. Are the results broadly consistent?
+
+# ANSWER : Broadly, the results are consistent because WASH7 was not found in the differentially expressed genes, while SLC25A47 was found. 
+
+```
+
+
+# Step 2.4: Extract and interpret the results for differential expression by death classification 
+
+
+```{r}
+
+### 2.4.1
+# Extracting differential expression results saved in dds for the sex variable 
+resCAUSEOFDEATH <- results(dds, name = "DTHHRDY_ventilator_case_vs_fast_death_of_natural_causes")  %>%
+  as_tibble(rownames = "GENE_NAME")
+
+# Printing the extracted diff expression results saved in resCAUSEOFDEATH to check it worked 
+head(resCAUSEOFDEATH)
+
+# Filtering for p-adjusted values that are below 0.1 to select for samples that have an FDR = 10% and saving results back to resSEX
+resCAUSEOFDEATH <- resCAUSEOFDEATH %>%
+  filter(padj < 0.1) %>%
+  arrange(padj)
+
+# Printing resSEX to check that the prior code worked 
+head(resCAUSEOFDEATH)
+
+# Printing the dimensions of the resSEX table to see the number of genes (shown by rows) are there 
+dim(resCAUSEOFDEATH)
+
+# QUESTION : How many genes are differentially expressed according to death classification at a 10% FDR?
+
+# ANSWER : 16069 genes are differentially expressed according to death classification at a 10% FDR
+
+```
+
+
+```{r}
+
+### 2.4.2
+
+# QUESTION : Interpret this result in your own words. Given your previous analyses, does it make sense that there would be more genes differentially expressed based on type of death compared to the number of genes differentially expressed according to sex?
+
+# ANSWER : It makes sense there would be more differentially expressed genes for cause of death compared to sex because we found out when plotting PCA for each variable, it seemed that cause of death had a high variance of around 48% compared to sex which had a 7% variance. 
+
+```
+
+
+
+
+# EXERCISE 3 : VISUALIZATION 
+
+```{r}
+
+### 3.1 
+
+# Creating a volcano plot using ggplot
+ggplot(data = resSEX, aes(x = log2FoldChange, y = -log10(padj))) +
+  geom_point(aes(color = (abs(log2FoldChange) > 1 & -log10(padj) > 1))) + # Highlighting and adding scatter plots of the genes that are considered significant based on criteria listed in the question 
+  geom_text(data = resSEX %>% filter(abs(log2FoldChange) > 1 & -log10(padj) > 10),
+            aes(x = log2FoldChange, y = -log10(padj) + 5, label = GENE_NAME), size = 2,) + # Adding text labels to the genes that are significant 
+  labs(y = expression(-log[10]("p-value")), x = expression(log[2]("fold change"))) + # Labeling the x- and y-axis with their respective labels 
+  ggtitle("Volcano plot of differential expression by sex") + # Labeling the volcano plot with a main title 
+  geom_line(mapping = aes(1),linetype = "dashed") + # Adding a dashed line at x = 1 to help better visualize the significant gene cut-offs 
+  geom_line(mapping = aes(-1),linetype = "dashed") + # Adding a dashed line at x = - 1 to help better visualize the significant gene cut-offs 
+  geom_line(mapping = aes(y = 1),linetype = "dashed") + # Adding a dashed line at y = 1 to help better visualize the significant gene cut-offs 
+  scale_color_manual(name = "Significant genes", values = c("TRUE" = "black", "FALSE" = "grey")) + # Adding a manual scale color for the significant genes in the legend 
+  theme_classic() + # Getting rid of the grey background and grid lines 
+  theme(plot.title = element_text(hjust = 0.5)) # Adjusting main title to be center of graph
+
+ggsave("w7_q3_volcano_for_sex.png")
+
+```
+
