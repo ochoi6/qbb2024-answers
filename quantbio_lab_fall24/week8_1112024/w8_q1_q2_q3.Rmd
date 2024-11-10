@@ -1,0 +1,113 @@
+---
+title: "week8_lvie"
+output: html_document
+date: "2024-11-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+SECTION 1. LOAD DATA 
+
+Load packages 
+
+```{r}
+
+# Loading packages into the current R environment 
+library(zellkonverter)
+library(scuttle)
+library(scran)
+library(scater)
+library(ggplot2)
+
+```
+
+Load and inspect data 
+
+```{r}
+
+# Loading gut data using the 'readH5AD' function and saving it as 'gut' 
+gut <- readH5AD("/Users/cmdb/qbb2024-answers/quantbio_lab_fall24/week8_1112024/week8_data/v2_fca_biohub_gut_10x_raw.h5ad")
+
+# Printing 'gut' dataframe to see it was loaded properly 
+print(gut)
+
+# Changing the assay name from 'X' to 'counts' using the provided function 
+assayNames(gut) <- "counts"
+
+# Normalizing counts using the provided function 
+gut <- logNormCounts(gut)
+
+```
+
+
+```{r}
+
+## Question 1. Inspect the gut SingleCellExperiment object
+
+# Printing gut to answer the following questions 
+gut
+
+
+# 1A) How many genes are quantitated (should be >10,000)?
+
+  # ANSWER : There are 13407 genes quantified. 
+
+
+# 1B) How many cells are in the data set?
+
+  # ANSWER : There are 11788 cells in the data set.
+
+
+# 1C) What dimension reduction data sets are present?
+
+  # ANSWER : There ar 3 dimension reduction data sets (X_pca, X_tsne, and X_umap). 
+
+```
+
+
+Inspect cell metadata 
+
+```{r}
+
+## Question 2. Inspect the available cell metadata
+
+# 2A) How many columns are there in colData(gut)?
+
+  # CODE : Using the provided code to see the columns present in 'gut' df 
+    colData(gut)
+  
+  # ANSWER : There are 39 coluns in the gut dataframe. 
+
+
+# 2B) Which three column names reported by colnames() seem most interesting? Briefly explain why.
+
+  # CODE : Using provided 'colnames()' function on the column data of 'gut' df to see the column names 
+    colnames(colData(gut))
+
+  # ANSWER : 'broad_annotation' seems interesting because it will help with figuring out cell clusters for later.                     downstream single cell analysis. 'n_genes' seems interesting because this contains the list of genes that               will help with determining QC metrics later. Finally, 'scrublet__doublet_scores' seems interesting because               I have never head of scrublet before and I assume it is also to help with quality control. 
+
+    
+# 2C) Plot cells according to X_umap using plotReducedDim() and colouring by broad_annotation. 
+    
+    # CODE : 
+    
+    # Setting seed to 42 for random distribution to start at same starting point 
+    set.seed(42)
+    
+    # Plotting 'X_umap' using the provided plotReducedDim() command from 'gut' df, coloring it with 'broad_annotation',     and saving it as q1_2c_x_umap 
+    q1_2c_x_umap <- plotReducedDim(gut, "X_umap", color = "broad_annotation")
+    
+    # Using ggsave() function to save 'q1_2c_x_umap' as a png file 
+    ggsave("q1_2c_x_umap.png", plot = q1_2c_x_umap, width = 6, height = 4, dpi = 300)
+
+```
+
+
+SECTION 2. EXPLORE DATA 
+
+
+
+SECTION 3. IDENTIFY GENE MARKERS 
