@@ -1,0 +1,394 @@
+---
+title: "week8_lvie"
+output: html_document
+date: "2024-11-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+SECTION 1. LOAD DATA 
+
+Load packages 
+
+```{r}
+
+# Loading packages into the current R environment 
+library(zellkonverter)
+library(scuttle)
+library(scran)
+library(scater)
+library(ggplot2)
+
+```
+
+Load and inspect data 
+
+```{r}
+
+# Loading gut data using the 'readH5AD' function and saving it as 'gut' 
+gut <- readH5AD("/Users/cmdb/qbb2024-answers/quantbio_lab_fall24/week8_1112024/week8_data/v2_fca_biohub_gut_10x_raw.h5ad")
+
+# Printing 'gut' dataframe to see it was loaded properly 
+print(gut)
+
+# Changing the assay name from 'X' to 'counts' using the provided function 
+assayNames(gut) <- "counts"
+
+# Normalizing counts using the provided function 
+gut <- logNormCounts(gut)
+
+```
+
+
+```{r}
+
+## Question 1. Inspect the gut SingleCellExperiment object
+
+# Printing gut to answer the following questions 
+gut
+
+
+# 1A) How many genes are quantitated (should be >10,000)?
+
+  # ANSWER : There are 13407 genes quantified. 
+
+
+# 1B) How many cells are in the data set?
+
+  # ANSWER : There are 11788 cells in the data set.
+
+
+# 1C) What dimension reduction data sets are present?
+
+  # ANSWER : There ar 3 dimension reduction data sets (X_pca, X_tsne, and X_umap). 
+
+```
+
+
+Inspect cell metadata 
+
+```{r}
+
+## Question 2. Inspect the available cell metadata
+
+# 2A) How many columns are there in colData(gut)?
+
+  # CODE : Using the provided code to see the columns present in 'gut' df 
+  colData(gut)
+  
+  # ANSWER : There are 39 columns in the gut dataframe. 
+
+
+# 2B) Which three column names reported by colnames() seem most interesting? Briefly explain why.
+
+  # CODE : Using provided 'colnames()' function on the column data of 'gut' df to see the column names 
+  colnames(colData(gut))
+
+  # ANSWER : 'broad_annotation' seems interesting because it will help with figuring out cell clusters for later downstream single cell analysis. 'n_genes' seems interesting because this contains the list of genes that will help with determining QC metrics later. Finally, 'scrublet__doublet_scores' seems interesting because I have never head of scrublet before and I assume it is also to help with quality control. 
+
+    
+# 2C) Plot cells according to X_umap using plotReducedDim() and colouring by broad_annotation. 
+    
+  # CODE : 
+    
+  # Setting seed to 42 for random distribution to start at same starting point 
+  set.seed(42)
+    
+  # Plotting 'X_umap' using the provided plotReducedDim() command from 'gut' df, coloring it with 'broad_annotation', and saving it as q1_2c_x_umap 
+  q1_2c_x_umap <- plotReducedDim(gut, "X_umap", color = "broad_annotation")
+    
+  # Using ggsave() function to save 'q1_2c_x_umap' as a png file 
+  ggsave("q1_2c_x_umap.png", plot = q1_2c_x_umap, width = 6, height = 4, dpi = 300)
+
+```
+
+
+SECTION 2. EXPLORE DATA 
+
+
+Explore gene-level statistics 
+
+```{r}
+
+# Creating a vector called 'genecounts' using rowSums() on the count matrix returned from assay(gut)
+genecounts <- rowSums(assay(gut))
+
+# Printing 'genecounts' to ensure I actually created the vector and there are values within it 
+head(genecounts)
+
+```
+
+
+```{r}
+
+## Question 3. Explore the 'gene_counts' distribution 
+
+# 3A) What is the mean and median 'genecounts' according to summary()? What might you conclude from these numbers?
+
+  # CODE : 
+  summary(genecounts)
+  
+  # ANSWER : The mean is 3185 and median is 254 for 'genecounts' matrix according to the summary() command. It seems that overall, the genes are lowly expressed but there are a few highly expressed gene outliers. 
+
+# 3B) What are the three genes with the highest expression after using sort()? What do they share in common?
+
+  # CODE : 
+  head(sort(genecounts, decreasing = TRUE))
+
+  # ANSWER : The lncRNA Hsromega, the pre-rRNA CR45845, and the lncRNA roX1 have the highest expression in descending order (meaning highest expression here would be Hsromega). They are all types of non-coding RNAs. 
+  
+```
+
+
+Explore cell-level statistics 
+
+```{r}
+
+## Question 4A. Explore the total expression in each cell across all genes. 
+
+# Creating a vector named cellcounts using colSums()
+cellcounts <- colSums(assay(gut))
+
+# Opening a graphics device that is going to save the histogram as a png file 
+png("q4a_cellcounts_histogram.png", width = 800, height = 600)
+
+# Creating a histogram of cell_counts using hist() and labeling the x/y-axis 
+hist(cellcounts, main = "Histogram of cell counts", xlab = "Cell counts", ylab = "Frequency", col = "rosybrown2")
+
+# Closing the graphics device 
+dev.off()
+
+# Printing a summary of the 'cellcounts' vector 
+summary(cellcounts)
+
+
+
+# 4A.1) What is the mean number of counts per cell? 
+
+  # ANSWER : The mean number of counts per cell is 3622. 
+
+
+# 4A.2) How would you interpret the cells with much higher total counts (>10,000)?
+
+  # ANSWER : The cells with much higher total count are either cells that are simply more common or may be due to processing error (if abnormal, it might be due to the same cells being counted again - doublet or even multiplet). 
+
+```
+
+
+```{r}
+
+## Question 4B. Explore the number of genes detected in each cell. 
+
+# Creating a vector named celldetected using colSums() but this time on assay(gut)>0
+celldetected <- colSums(assay(gut)>0)
+
+# Opening a graphics device that is going to save the histogram as a png file 
+png("q4b_cellsdetected histogram.png", width = 800, height = 600)
+
+# Creating a histogram of celldetected using hist() and labeling the x/y-axis 
+hist(celldetected, main = "Histogram of cells detected", xlab = "Cells being detected", ylab = "Frequency", col = "lightblue3")
+
+# Closing the graphics device 
+dev.off()
+
+# Printing a summary of the 'cellcounts' vector 
+summary(celldetected)
+
+
+
+# 4B.1) What is the mean number of genes detected per cell?
+  # ANSWER : The mean number of genes detected per cell is 1059. 
+
+
+# 4B.2) What fraction of the total number of genes does this represent?
+  # ANSWER : From gene counts, we see that there are a total of 13,407 genes. Taking the mean number of genes, we see that 1059/13407 = 7.89885%. So around ~8% of genes in the cell is being represented. 
+
+```
+
+
+
+Explore mitochondrial reads 
+
+```{r}
+
+# Creating a vector named 'mito' of mitochondrial gene names using grep() to search rownames(gut) for the pattern ^mt: and setting value to TRUE
+mito <- grep("^mt:", rownames(gut), value = TRUE)
+
+# Printing 'mito' to check that it worked 
+mito
+
+# Creating a data-frame named 'df' using perCellQCMetrics() specifying that subsets=list(Mito=mito)
+df <- perCellQCMetrics(gut, subsets = list(Mito = mito))
+
+# Converting df to a data.frame using as.data.frame() 
+df <- as.data.frame(df)
+
+# Running summary() on the converted 'df'
+summary(df)
+
+# Adding metrics to cell metadata using colData(gut) <- cbind( colData(gut), df )
+colData(gut) <- cbind(colData(gut), df)
+
+# Printing 'df' to check that all prior steps worked and didn't produce any errors 
+head(df)
+
+```
+
+
+```{r}
+
+## Question 5. Visualize percent of reads from mitochondria
+
+# Using plotColData() to plot subsets_Mito_percent on the y-axis against the broad_annotation on the x-axis rotating the x-axis labels using theme( axis.text.x=element_text( angle=90 ) )
+plotColData(object = gut, 
+            x = "broad_annotation", 
+            y = "subsets_Mito_percent", 
+            color_by = "broad_annotation") + # Coloring each cell type by a different color 
+  labs(x = " Cell type", 
+       y = "Percentage of mitochondiral gene expression", 
+       title = "Percentage of mitochondrial gene expression by cell type") + 
+  theme(axis.text.x = element_text(angle = 90), 
+        plot.title = element_text(hjust = 0.5))  # Centering the title 
+
+# Saving the plot as 'q5_broad annotation_vs_% mitochondrial reads.png' into a png file
+ggsave("q5_broad annotation_vs_% mitochondrial reads.png")
+
+
+
+# 5) Which cell types may have a higher percentage of mitochondrial reads? Why might this be the case?
+
+  # ANSWER : Based on the plot, it seems like epithelial, gut, and muscle system cell types have a higher percentage of mitochondrial reads. This is probably due to the fact that they are cells requiring higher energy (which can aka be supplied by the mitochondria, also known as the powerhouse of the cell).  
+
+```
+
+
+
+
+SECTION 3. IDENTIFY GENE MARKERS 
+
+
+Analyze epithelial cells
+
+
+```{r}
+
+## QUESTION 6A. Subset cells annotated as “epithelial cell”
+
+# Creating a vector named 'coi' that indicates cells of interest where TRUE and FALSE are determined by colData(gut)$broad_annotation == "epithelial cell"
+coi <- colData(gut)$broad_annotation == "epithelial cell"
+
+# Creating a new SingleCellExperiment object named epi by subsetting gut with [,coi]
+epi <- gut[,coi]
+
+# Plotting epi according to X_umap, coloring by annotation, and saving this plot for submission
+plotReducedDim(epi, 
+               "X_umap", 
+               color = "annotation") + 
+  labs(x = "Umap 1", 
+       y="Umap 2", 
+       title = "UMap of Epithelial Cells") 
+
+ggsave("q6a_UMap of Epithelial Cells.png")
+
+# Creating a list named 'marker.info' that contains the pairwise comparisons between all annotation categories using scoreMarkers( epi, colData(epi)$annotation )
+marker.info <- scoreMarkers(epi, colData(epi)$annotation)
+
+# Identifying the top marker genes in the anterior midgut according to mean.AUC using the following code
+chosen <- marker.info[["enterocyte of anterior adult midgut epithelium"]]
+
+ordered <- chosen[order(chosen$mean.AUC, decreasing = TRUE),]
+
+head(ordered[,1:4])
+
+```
+
+```{r}
+
+## QUESTION 6B. Evaluate top marker genes 
+
+# 6B.1) What are the six top marker genes in the anterior midgut? Based on their functions at flybase.org, what macromolecule does this region of the gut appear to specialize in metabolizing?
+
+  # ANSWER : The six top marker genes in the anterior midgut are Mal-A6, Men-b, vnd, betaTry, Mal-A1, and Nhe2. It seems that they specialize in metabolizing the carbohydrate class sugars. 
+
+# 6B.2) Plot the expression of the top marker gene across cell types using plotExpression() and specifying the gene name as the feature and annotation as the x-axis and submit this plot
+plotExpression(epi, 
+               c("Mal-A6", "Men-b", "vnd", "betaTry", "Mal-A1", "Nhe2"), 
+               x = "annotation", 
+               color_by = "annotation") + # Coloring by annotation for each gene 
+  labs(x = "Annotation",
+       y = "Expression (log fold change)",
+       title = "Expression counts for the top 6 marker genes in the anterior midgut") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), # Adjusting the x-axis label to better fit the plot dimensions 
+        plot.title = element_text(hjust = 0.5)) 
+
+# Saving the plot made as 'q6b_top6_marker_genes.png' and manually saving it with specific dimensions to better space out the figure so that expression values can actually be seen 
+ggsave("q6b_top6_marker_genes.png", width = 10, height = 6, dpi = 300)
+
+```
+
+
+
+
+Analyze somatic precursor cells
+
+
+```{r}
+
+## QUESTION 7. Evaluate top marker genes
+
+# Subsetting cells with the broad annotation somatic precursor cell and saving it into a vector called 'somatic_precursor_cells'
+somatic_precursor_cells <- colData(gut)$broad_annotation == "somatic precursor cell"
+
+# Identifying marker genes for intestinal stem cells
+spc <- gut[, somatic_precursor_cells]
+
+spc.marker.info <- scoreMarkers(spc, colData(spc)$annotation)
+intestinal_stem_cells_SPCs <- spc.marker.info[["intestinal stem cell"]]
+ordered_ISC_SPCs <- intestinal_stem_cells_SPCs[order(intestinal_stem_cells_SPCs$mean.AUC, decreasing = TRUE),]
+
+# Creating a vector named 'goi' that contains the names of the top six genes of interest by rownames(ordered)[1:6]
+goi <- rownames(ordered_ISC_SPCs)[1:6]
+
+goi
+
+# Plotting the expression of the top six marker genes across cell types using plotExpression() and specifying the goi vector as the features and submit this plot
+plotExpression(spc, 
+               c("hdc", "kek5", "N", "zfh2", "Tet", "Dl"),  
+               x = "annotation", 
+               color_by = "annotation") + # Coloring by annotation for each gene 
+  labs(x = "Annotation",
+       y = "Expression (log fold change)",
+       title = "Expression counts for the top 6 marker genes in the somatic precursor cell annotation") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), # Adjusting the x-axis label to better fit the plot dimensions 
+        plot.title = element_text(hjust = 0.5)) 
+
+# Saving the plot made as 'q6b_top6_marker_genes.png' and manually saving it with specific dimensions to better space out the figure so that expression values can actually be seen 
+ggsave("q7_top6_marker_genes.png", width = 10, height = 6, dpi = 300)
+
+
+
+# 7.1) Which two cell types have more similar expression based on these markers?
+
+  # ANSWER : Enteroblasts and intestinal stem cells have higher similar expression. 
+
+
+# 7.2) Which marker looks most specific for intestinal stem cells?
+
+  # ANSWER : DI looks the most specific for intestinal stem cells because it has relatively low expression for adult differentiating enterocyte and enteroblast vs very high expression for intestinal stem cell. 
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
