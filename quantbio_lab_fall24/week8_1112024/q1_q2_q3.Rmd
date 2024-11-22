@@ -1,5 +1,5 @@
 ---
-title: "week8_lvie"
+title: "week8_homework"
 output: html_document
 date: "2024-11-01"
 ---
@@ -254,7 +254,7 @@ plotColData(object = gut,
         plot.title = element_text(hjust = 0.5))  # Centering the title 
 
 # Saving the plot as 'q5_broad annotation_vs_% mitochondrial reads.png' into a png file
-ggsave("q5_broad annotation_vs_% mitochondrial reads.png")
+ggsave("q5_broad_annotation_vs_mitochondrial_reads.png")
 
 
 
@@ -289,9 +289,10 @@ plotReducedDim(epi,
                color = "annotation") + 
   labs(x = "Umap 1", 
        y="Umap 2", 
-       title = "UMap of Epithelial Cells") 
+       title = "UMap of Epithelial Cells") +
+  theme(plot.title = element_text(hjust = 0.5))
 
-ggsave("q6a_UMap of Epithelial Cells.png")
+ggsave("q6a_UMap_of_Epithelial_Cells.png")
 
 # Creating a list named 'marker.info' that contains the pairwise comparisons between all annotation categories using scoreMarkers( epi, colData(epi)$annotation )
 marker.info <- scoreMarkers(epi, colData(epi)$annotation)
@@ -304,6 +305,8 @@ ordered <- chosen[order(chosen$mean.AUC, decreasing = TRUE),]
 head(ordered[,1:4])
 
 ```
+
+
 
 ```{r}
 
