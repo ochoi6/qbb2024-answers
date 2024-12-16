@@ -1,0 +1,101 @@
+---
+title: "week 10 q3_2"
+output: html_document
+date: "2024-12-16"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+EXERCISE 3.2 : Plot each set of data in a separate violin plot
+
+For each set of data, nascent RNA signal, PCNA signal, and the log2 ratio, create a violin plot with appropriate axis labels and title.
+
+
+```{r}
+
+# Setting the working directory to my local week 10 directory folder 
+setwd("/Users/cmdb/qbb2024-answers/quantbio_lab_fall24/week10_11152024")
+
+# Loading the data into the environment and saving it as a dataframe called 'gene_signal' 
+gene_signal <- read.csv("gene_signal_data.txt", header = TRUE)
+
+# Printing 'gene_signal' to check that it was loaded correctly 
+head(gene_signal)
+
+```
+
+
+```{r}
+
+# Loading the necessary libraries into my environment 
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+```
+
+PLOT 1 = NASCENT RNA SIGNAL 
+
+
+```{r}
+
+# Converting the 'Gene' column to a factor for better grouping and saving it back to the same 'Gene' column 
+gene_signal$Gene <- factor(gene_signal$Gene)
+
+# Creating violin plot for nascent RNA signal using ggplot 
+ggplot(gene_signal, aes(x = Gene, y = nascentRNA, fill = Gene)) + # Putting in fill so that it is color designations 
+  geom_violin(trim = FALSE, scale = "width", alpha = 0.5) + # Trim (extends tails of violins to max/min), scaling each violin so that it is the same across all 4 genes, and reducing alpha shade for transparency 
+  labs(title = "Nascent RNA signal across genes",
+       x = "Gene",
+       y = "Nascent RNA signal") + 
+  theme_classic() + # Getting rid of the gray grid background
+  theme(plot.title = element_text(hjust = 0.5)) # Centering the title 
+
+# Saving plot as png files
+ggsave("nascentRNA_violin_plot.png", width = 8, height = 6, dpi = 300)
+
+```
+
+
+PLOT 2 = PCNA SIGNAL 
+
+
+```{r}
+
+# Creating violin plot for PCNA signal
+ggplot(gene_signal, aes(x = Gene, y = PCNA, fill = Gene)) + # Putting in fill so that it is color designations 
+  geom_violin(trim = FALSE, scale = "width", alpha = 0.5) + # Trim (extends tails of violins to max/min), scaling each violin so that it is the same across all 4 genes, and reducing alpha shade for transparency 
+  labs(title = "PCNA signal across genes",
+       x = "Gene",
+       y = "PCNA signal") + 
+  theme_classic() + # Getting rid of the gray grid background
+  theme(plot.title = element_text(hjust = 0.5)) # Centering the title 
+
+# Saving plot as png file
+ggsave("PCNA_violin_plot.png", width = 8, height = 6, dpi = 300)
+
+```
+
+
+PLOT 3 = LOG2 RATIO 
+
+
+```{r}
+
+# Creating violin plot for log2 ratio
+ggplot(gene_signal, aes(x = Gene, y = ratio, fill = Gene)) + # Putting in fill so that it is color designations 
+  geom_violin(trim = FALSE, scale = "width", alpha = 0.5) + # Trim (extends tails of violins to max/min), scaling each violin so that it is the same across all 4 genes, and reducing alpha shade for transparency 
+  labs(title = "Log2 ratio (nascent RNA/PCNA) across genes",
+       x = "Gene",
+       y = "Log2 ratio") + 
+  theme_classic() + # Getting rid of the gray grid background
+  theme(plot.title = element_text(hjust = 0.5)) # Centering the title 
+
+# Saving plot as png file
+ggsave("log2_ratio_violin_plot.png", width = 8, height = 6, dpi = 300)
+
+```
+
